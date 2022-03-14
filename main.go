@@ -38,36 +38,26 @@ func newRunner(parallel int, fetcher fetcher) *runner {
 	}
 }
 
-func (r *runner) run(urls []string) []urlAndHash {
+func (r *runner) run(urls []string) chan urlAndHash {
 	// start workers of parallel parameter count
 	for i := 0; i < r.parallel; i++ {
 		go r.worker()
 	}
 
-	resultsCompletelyReadCh := make(chan struct{})
-	var result []urlAndHash
-	// start reading responses from workers and add them to result slice
 	go func() {
-		for resp := range r.respCh {
-			result = append(result, resp)
+		// send tasks to task channel which will be processed by the workers
+		for _, url := range urls {
+			r.taskCh <- url
 		}
-		close(resultsCompletelyReadCh)
+		// close taskCh so workers understand that they should stop and exit
+		close(r.taskCh)
+
+		// wait until all workers returned
+		r.wg.Wait()
+		close(r.respCh)
 	}()
 
-	// send tasks to task channel which will be processed by the workers
-	for _, url := range urls {
-		r.taskCh <- url
-	}
-	// close taskCh so workers understand that they should stop and return
-	close(r.taskCh)
-
-	// wait until all workers returned
-	r.wg.Wait()
-	close(r.respCh)
-	// wait until all results read
-	<-resultsCompletelyReadCh
-
-	return result
+	return r.respCh
 }
 
 func (r *runner) worker() {
@@ -86,7 +76,7 @@ func main() {
 	r := newRunner(*parallelPtr, newHTTPFetcher())
 	results := r.run(tail)
 
-	for _, result := range results {
+	for result := range results {
 		fmt.Println(result.url, result.hash)
 	}
 }

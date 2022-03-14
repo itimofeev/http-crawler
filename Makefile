@@ -6,4 +6,4 @@ test:
 	go test -race ./...
 
 run:
-	go run -race github.com/itimofeev/http-crawler -parallel 10 google.com yandex.ru https://adjust.com http://www.reddit.com/r/funny/
+	go run -race github.com/itimofeev/http-crawler -parallel 10 google.com yandex.ru https://adjust.com http://www.reddit.com/r/funny/ www.reddit.com/r/notfunny https://baroquemusiclibrary.com/

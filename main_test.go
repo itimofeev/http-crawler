@@ -24,14 +24,19 @@ func TestRunner_Run(t *testing.T) {
 			urls:     []string{"hello", "there", "world", "peace", "programming", "and", "so", "on"},
 		},
 		{
-			name:     "more_threads_then_tasks",
+			name:     "more_threads_than_tasks",
 			parallel: 100,
 			urls:     []string{"hello", "there", "world", "peace", "programming", "and", "so", "on"},
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result := newRunner(test.parallel, &mockFetcher{}).run(test.urls)
+			resultCh := newRunner(test.parallel, &mockFetcher{}).run(test.urls)
+			var result []urlAndHash
+			for resultItem := range resultCh {
+				result = append(result, resultItem)
+			}
+
 			if len(result) != len(test.urls) {
 				t.Error("count of results missmatch")
 			}
